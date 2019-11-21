@@ -42,7 +42,6 @@ class DemoRunner(object):
         ''' '''
 
         if self.args.base_net == 'lenet':
-<<<<<<< HEAD
             self.base_model = backbone.LeNets(self.args.num_class).to(self.device)
 
         elif self.args.base_net == 'alexnet':
@@ -64,29 +63,8 @@ class DemoRunner(object):
             self.base_model = backbone.SqueezeNet(self.args.num_class, 'A').to(self.device)
 
         elif self.args.base_net == 'mobilenet':
-            # self.base_model = backbone.MobileNetV2(self.args.num_class, width_mult=1.0, round_nearest=1).to(self.device)
-            self.base_model = backbone.MobileNet2(self.args.num_class).to(self.device)
-=======
-            self.base_model = LeNets(self.args.num_class)
-
-        elif self.args.base_net == 'alexnet':
-            self.base_model = AlexNet(self.args.num_class)
-
-        elif self.args.base_net == 'vgg':
-            self.base_model = VGG(self.args.num_class, self.args.mode)
-
-        elif self.args.base_net == 'inception':
-            self.base_model = GoogLeNet(self.args.num_class)
-
-        elif self.args.base_net == 'resnet':
-            self.base_model = ResNet(self.args.num_class)
-
-        elif self.args.base_net == 'densenet':
-            self.base_model = DenseNet(self.args.num_class, self.args.mode)
-
-        elif self.args.base_net == 'squeezenet':
-            self.base_model = SqueezeNet(self.args.num_class, self.args.mode)
->>>>>>> refs/remotes/origin/master
+            self.base_model = backbone.MobileNetV2(self.args.num_class, width_mult=1.0, round_nearest=1).to(self.device)
+            # self.base_model = backbone.MobileNet2(self.args.num_class).to(self.device)
 
         else:
             raise TypeError('Unknow base_net ...')
@@ -100,7 +78,7 @@ class DemoRunner(object):
             self.base_model = torch.nn.DataParallel(self.base_model, device_ids=self.args.gpus).cuda()
             torch.backends.cudnn.benchmark = True
         else:
-            self.base_mode.to(self.device)
+            self.base_model.to(self.device)
 
         self.criterion = torch.nn.CrossEntropyLoss()
         if self.args.optim_md == 'sgd':
@@ -116,7 +94,7 @@ class DemoRunner(object):
 
         self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[25, 40], gamma=self.args.gamma)
 
-    
+
     def _adjust_lr(self, epoch, exp_num):
         ''' Sets the learning rate to the initial LR decayed by 0.1 every 30 epochs '''
 
@@ -150,7 +128,7 @@ class DemoRunner(object):
         start_time, num_instance = time.time(), 0
         for input, target in tqdm(self.trainloader):
 
-            target     = target.cuda(async=True)
+            # target     = target.cuda(async=True)
             target_var = target
             num_instance += len(target)
             try:
@@ -182,7 +160,7 @@ class DemoRunner(object):
         running_loss, running_acc, num_instance = 0, 0.0, 0
         for input, target in tqdm(self.testloader):
 
-            target     = target.cuda(async=True)
+            # target     = target.cuda(async=True)
             target_var = target
             num_instance += len(target)
             output = self.base_model(input)
@@ -208,43 +186,14 @@ class DemoRunner(object):
 
         for epoch in range(0, self.args.num_epochs):
 
-<<<<<<< HEAD
+
             # self.scheduler.step()
-=======
-            if saturate_cnt == self.args.num_saturate:
-                exp_num += 1
-                saturate_cnt = 0
-                print('Attention!!!, lr decreases by a factor of %6d' % (10 ** exp_num))
-            
-            if self.args.adlr_style == 'parts':
-                self._adjust_lr(epoch, exp_num)
-            else:
-                self.scheduler.step()
->>>>>>> refs/remotes/origin/master
-
             self._train_engine(epoch)
-
+            loss, acc = self._valid_engine()
             self.scheduler.step()
 
-            loss, acc = self._valid_engine()
-            
-            is_best = loss < bst_acc or acc > bst_acc
-
-            if is_best:
-                saturate_cnt = 0
+            if self.args.save_flag and (loss < bst_acc or acc > bst_acc):
                 print('Yahoo, a new SOTA has been found ...')
-            else:
-                saturate_cnt += 1
-
-            if self.args.save_flag and is_best:
-
-<<<<<<< HEAD
-            print('Yahoo, a new SOTA has been found ...')
-            is_best = loss < bst_acc or acc > bst_acc
-
-            if self.args.save_flag and is_best:
-=======
->>>>>>> refs/remotes/origin/master
                 save_name = self.args.save_to + self.args.base_net + 'bst.pth.tar'
                 torch.save({
                     'epoch'      : epoch+1,
